@@ -9,7 +9,14 @@ rem Dependencias necessárias:
 rem 1) Requer o MSOFFice 2016+ instalado e registrado, versão com licença
 rem   expirada nao funcionará
 rem 2) Requer o programa PDFTK Server instalado, este programa é gratuito.
-rem   Todo: substituir no futro o PDFTK por QPDF que é opensource;
+rem 3) Requer o programa docto instalado, este programa é opensource e pode 
+rem    ser obtido em:
+rem    https://github.com/tobya/DocTo
+rem Todo: Atualmente depende de docto.exe para a conversao e pdftk para mudar 
+rem   os atributos do PDF como remover impressão e copiar para a clipboard 
+rem   seria muito interessante trocar essas duas dependencias por um programa
+rem   que faça as duas coisas, talvez estudar o qpdf para ver se é capaz de 
+rem   fazer isso.
 rem Observacoes: O MSOffice deve estar instalado e ativado e também deve ser
 rem   o aplicativo padrão para doc e docx. Os arquivos a serem convertidos
 rem   nao podem ter espaço no meio do nome.
@@ -17,20 +24,21 @@ rem Autor: Gladiston Santana <gladiston.santana [em] gmail.com>
 rem Data: 02/01/2016
 rem
 setlocal enableextensions enabledelayedexpansion
-set pdfpass=qualsenhausar
-set dir_in=C:\Downloads
+set pdfpass=senha123
+set dir_in=D:\Downloads\Pierre
 set dir_out=%dir_in%\pdf
 set arq_lista=%dir_in%\lista-pdf.txt
-set dir_app=C:\Program Files (x86)\PDFtk Server\bin
-set path=%path%;%dir_app%;
+set exe_docto=c:\Windows\syswol32\docto.exe
+set pdftk_dir=C:\Program Files (x86)\PDFtk Server\bin
+set path=%path%;%pdftk_dir%;
 set EXIT_CODE=0
-rem ========================================
+rem ==========================================
 rem nao faça alteracoes deste ponto em diante
-rem ========================================
+rem ==========================================
 if not exist "%dir_out%" mkdir -p "%dir_out%" 
 if not exist "%dir_out%" goto dir_out_error
-rem if not exist "%exe_docto%" goto exe_docto_not_exist
-if not exist "%dir_app%\pdftk.exe" goto exe_app_not_exist
+if not exist "%exe_docto%" goto exe_docto_not_exist
+if not exist "%pdftk_dir%\pdftk.exe" goto exe_app_not_exist
 rem --bookmarksource --pdf-BookmarkSource     
 rem     PDF conversions can take their bookmarks from
 rem    WordBookmarks, WordHeadings (default) or None
@@ -41,7 +49,13 @@ echo Atenção: Arquivos nao podem ter espaços no nome.
 echo Doc: !dir_in!
 echo PDF: !dir_out!
 echo =================================================
+rem O docto fará a conversão de .doc para .pdf, mas ele tem inconvenientes:
+rem (1) requer o msword instalado e legalizado, não pode ser demo.
+rem (2) converte para PDF, mas nao muda os atributos, nao tem por exemplo 
+rem como proteger o PDF impedindo impressão ou operações de cópia
+rem para a clipboard, daí a necessidade do pdftk.
 
+echo "%exe_docto%" -f "%dir_in%\" -O "%dir_out%\" -T wdFormatPDF  -OX .pdf %pdf_bookmark%
 "%exe_docto%" -f "%dir_in%\" -O "%dir_out%\" -T wdFormatPDF  -OX .pdf %pdf_bookmark% >%arq_lista%
 set EXIT_CODE=%ERRORLEVEL%
 IF %EXIT_CODE% NEQ 0 goto fim
@@ -91,8 +105,13 @@ if exist "!arq_lista!" del /q /f "!arq_lista!"
 echo Ok, tudo pronto.
 goto fim
 
+:exe_docto_not_exist
+  echo Conversor docto nao existe: "%exe_docto%"
+  pause
+  goto fim
+
 :exe_app_not_exist
-  echo Conversor PDFTK nao existe: "%dir_app%\pdftk.exe"
+  echo Conversor PDFTK nao existe: "%pdftk_dir%\pdftk.exe"
   pause
   goto fim
 
